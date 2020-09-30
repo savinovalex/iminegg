@@ -10,6 +10,9 @@ class Iminegg(pl.LightningModule):
         super().__init__()
         self.net = net
 
+    def forward(self, inp):
+        return self.net.calc(inp)
+
     def training_step(self, batch, batch_idx):
         # training_step defined the train loop. It is independent of forward
         x = torch.unsqueeze(batch['input'], 1)
@@ -30,65 +33,40 @@ class Iminegg(pl.LightningModule):
         
         logs = {
             "train_loss": loss,
-            "voice_noise_psnr": -10 * loss_voice_noise.log(),
-            "noise_psnr": -10 * loss_noise.log(),
+            "train_voice_noise_psnr": -10 * loss_voice_noise.log(),
+            "train_noise_psnr": -10 * loss_noise.log(),
         }
-        batch_dictionary={
-            #REQUIRED: It ie required for us to return "loss"
-            "loss": loss,
-            
-            #optional for batch logging purposes
-            "log": logs,
-        }
-        return batch_dictionary
-    
-    def training_epoch_end(self,outputs):
-        #  the function is called after every epoch is completed
 
-        # calculating average loss  
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        res = pl.TrainResult(loss)
+        res.log_dict(logs, on_step=True, on_epoch=True)
 
-        # calculating correect and total predictions
-        correct=1
-        total=2
-
-        # creating log dictionary
-        tensorboard_logs = {'loss': avg_loss,"Accuracy": correct/total}
-
-        epoch_dictionary={
-            # required
-            'loss': avg_loss,
-            
-            # for logging purposes
-            'log': tensorboard_logs}
-
-        return epoch_dictionary
+        return res
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
         return optimizer
     
-
     def validation_step(self, batch, batch_idx):
         x = torch.unsqueeze(batch['input'], 1)
         y = torch.unsqueeze(batch['target'], 1)
-        
+
         voice_noise_maskind = batch['type'] == MyIterableDataset.TYPE_VOICE_NOISE
         noise_maskind = batch['type'] == MyIterableDataset.TYPE_NOISE
-        
+
         x_hat = self.net.calc(x)
-        
+
         loss_voice_noise = F.mse_loss(x_hat[voice_noise_maskind], y[voice_noise_maskind])
         loss_noise = F.mse_loss(x_hat[noise_maskind], y[noise_maskind])
-        
+
         loss = (loss_voice_noise + loss_noise) * 1000
-        
-        return {
-            "val_loss": loss,
-            "val_voice_noise_psnr": -10 * loss_voice_noise.log(),
-            "val_noise_psnr": -10 * loss_noise.log(),
+
+        logs = {
+            "loss": loss,
+            "voice_noise_psnr": -10 * loss_voice_noise.log(),
+            "noise_psnr": -10 * loss_noise.log(),
         }
 
-    def validation_end(self, outputs):
-        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        return {'avg_val_loss': avg_loss}
+        res = pl.EvalResult()
+        res.log_dict(logs, on_step=False, on_epoch=True)
+
+        return res
