@@ -15,57 +15,58 @@ class Iminegg(pl.LightningModule):
     def forward(self, inp):
         return self.net.calc(inp)
 
+    @staticmethod
+    def masked_mse(pred, tgt, mask):
+        if mask.sum() > 0:
+            mse = F.mse_loss(pred[mask], tgt[mask])
+        else:
+            mse = 0
+        return mse
+
     def step(self, batch):
         x = torch.unsqueeze(batch['input'], 1)
         y = torch.unsqueeze(batch['target'], 1)
 
-        voice_noise_maskind = batch['type'] == MyIterableDataset.TYPE_VOICE_NOISE
-        noise_maskind = batch['type'] == MyIterableDataset.TYPE_NOISE
+        mask_vn = batch['type'] == MyIterableDataset.TYPE_VOICE_NOISE
+        mask_n = batch['type'] == MyIterableDataset.TYPE_NOISE
+        mask_v = batch['type'] == MyIterableDataset.TYPE_VOICE
 
         x_hat = self.net.calc(x)
 
-        if voice_noise_maskind.sum() > 0:
-            loss_voice_noise = F.mse_loss(x_hat[voice_noise_maskind], y[voice_noise_maskind])
-        else:
-            loss_voice_noise = torch.tensor(0).to(x)
+        loss_vn = self.masked_mse(x_hat, y, mask_vn)
+        loss_v  = self.masked_mse(x_hat, y, mask_v)
+        loss_n  = self.masked_mse(x_hat, y, mask_n)
 
-        if noise_maskind.sum() > 0:
-            loss_noise = F.mse_loss(x_hat[noise_maskind], y[noise_maskind])
-        else:
-            loss_noise = torch.tensor(0).to(x)
+        loss = (loss_vn + loss_v + loss_n) * 1000
 
-        loss = (loss_voice_noise + loss_noise) * 1000
-        return loss, loss_voice_noise, loss_noise
+        logs = { "loss": loss }
+        if loss_vn > 0:
+            logs["voice_noise_psnr"] = -10 * loss_vn.log10()
+            logs["noise_psnr"]: -10 * loss_n.log10()
+            logs["voice_psnr"]: -10 * loss_v.log10()
+
+        return loss, logs
 
     def training_step(self, batch, batch_idx):
         # training_step defined the train loop. It is independent of forward
-        loss, loss_voice_noise, loss_noise = self.step(batch)
-
-        logs = {
-            "train/loss": loss,
-            "train/voice_noise_psnr": -10 * (EPS + loss_voice_noise).log10(),
-            "train/noise_psnr": -10 * (EPS + loss_noise).log10(),
-        }
-
+        loss, logs = self.step(batch)
+        logs = {f"train/{k}": v for k, v in logs.items()}
+        print(loss)
         res = pl.TrainResult(loss)
-        res.log_dict(logs, on_step=True, on_epoch=True)
+        res.log_dict(logs, on_step=False, on_epoch=True)
 
         return res
     
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
-        return optimizer
-    
     def validation_step(self, batch, batch_idx):
-        loss, loss_voice_noise, loss_noise = self.step(batch)
-
-        logs = {
-            "val/loss": loss,
-            "val/voice_noise_psnr": -10 * (EPS + loss_voice_noise).log10(),
-            "val/noise_psnr": -10 * (EPS + loss_noise).log10(),
-        }
+        loss, logs = self.step(batch)
+        logs = {f"val/{k}": v for k, v in logs.items()}
 
         res = pl.EvalResult(checkpoint_on=loss)
         res.log_dict(logs, on_step=False, on_epoch=True)
 
         return res
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
+        return optimizer
+
