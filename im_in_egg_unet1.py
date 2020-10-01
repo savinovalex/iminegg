@@ -35,7 +35,6 @@ class ImineggNet1(nn.Module):
         self.conv_final = nn.Conv1d(w * 2, 1 * 2, 9, 1, 4)
         
         #self.conv4 = nn.Conv1d(512, upscale_factor ** 2, (3, 3), (1, 1), (1, 1))
-        
         self.pixel_shuffle = PixelShuffle1D(64)
         self.pixel_shuffle2 = PixelShuffle1D(2)
 

@@ -13,10 +13,12 @@ def override_vars(obj):
         if k not in os.environ:
             continue
 
-        if not isinstance(v1, (int, float, str)):
+        if not isinstance(v1, (int, float, bool, str)):
             continue
 
         v2 = os.environ[k]
+        if isinstance(v1, bool):
+            v2 = bool(v2)
         if isinstance(v1, int):
             v2 = int(v2)
         elif isinstance(v1, float):

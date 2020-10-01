@@ -15,6 +15,7 @@ class Config:
     NSUF = ''
     TRAIN_EPOCH_SIZE = 1000
     VAL_EPOCH_SIZE = 200
+    DEV_RUN = False
 
     GPUS = "0"
 
@@ -48,5 +49,15 @@ class Config:
 
     def train(self):
         print(f'Fitting {self.exp_name} ...')
-        trainer = pl.Trainer(max_epochs=10000, gpus=self.GPUS, logger=self.tb_logger, log_save_interval=10, track_grad_norm=2)
+
+        checkpoint_saver = pl.callbacks.ModelCheckpoint(
+            save_top_k=3,
+            verbose=True,
+            monitor='val/loss',
+            mode='min'
+        )
+
+        trainer = pl.Trainer(max_epochs=10000, gpus=self.GPUS, logger=self.tb_logger, log_save_interval=10, track_grad_norm=2,
+                             checkpoint_callback=checkpoint_saver,
+                             fast_dev_run=self.DEV_RUN)
         trainer.fit(self.model, self.dl_train, self.dl_validation)
