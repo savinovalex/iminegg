@@ -38,7 +38,7 @@ class MyIterableDataset(torch.utils.data.IterableDataset):
     def generate_with_noise(self):
         voice = self._voice_sample()
         noise = self._noise_sample()
-        return {'input': voice + noise / random.uniform(6, 14), 'target': voice, 'type': self.TYPE_VOICE_NOISE}
+        return {'input': voice + noise / random.uniform(1, 3), 'target': voice, 'type': self.TYPE_VOICE_NOISE}
     
     def generate_voice(self):
         voice = self._voice_sample()
@@ -46,15 +46,15 @@ class MyIterableDataset(torch.utils.data.IterableDataset):
     
     def generate_noise(self):
         noise = self._noise_sample()
-        return {'input': noise / random.uniform(6, 14), 'target': self.silence, 'type': self.TYPE_NOISE}
+        return {'input': noise / random.uniform(1, 3), 'target': self.silence, 'type': self.TYPE_NOISE}
     
     def generate(self):
         r = random.uniform(0, 1)
-        if r < 0.5:
+        if r < 0.4:
             return self.generate_with_noise()
-        if r < 1.0:
+        if r < 0.8:
             return self.generate_noise()
-        return self.generate_noise()
+        return self.generate_voice()
         
     def __iter__(self):
         return self
