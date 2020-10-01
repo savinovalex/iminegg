@@ -1,35 +1,47 @@
 #!/usr/bin/env python3
 
-from torch.utils.data import DataLoader
+from argparse import ArgumentParser
+import importlib.util
+import os
 
-import pytorch_lightning as pl
-from pytorch_lightning import loggers as pl_loggers
 
-from im_in_egg_unet1 import ImineggNet1
-from trainer import Iminegg
-from my_iterable_dataset import MyIterableDataset
+def override_vars(obj):
+    for k, v1 in vars(obj).items():
+        if k != k.upper():
+            continue
 
-NAME = 'W128'
-BS = 5
-TRAIN_EPOCH_SIZE = 10
-VAL_EPOCH_SIZE = 10
+        if k not in os.environ:
+            continue
+
+        if not isinstance(v1, (int, float, str)):
+            continue
+
+        v2 = os.environ[k]
+        if isinstance(v1, int):
+            v2 = int(v2)
+        elif isinstance(v1, float):
+            v2 = float(v2)
+
+        print(f'Overriding {k} := {v2}')
+        setattr(obj, k, v2)
+
 
 if __name__ == '__main__':
-    print('Building net...')
-    iminegg_net = ImineggNet1(2)
-    iminegg = Iminegg(iminegg_net)
+    parser = ArgumentParser()
+    parser.add_argument('mode', choices=['train'])
+    parser.add_argument('cfg')
 
-    print('Loading datasets...')
-    ds_train = MyIterableDataset(TRAIN_EPOCH_SIZE, "./data/train")
-    ds_validate = MyIterableDataset(VAL_EPOCH_SIZE, "./data/val")
+    args = parser.parse_args()
 
-    print('Creating training...')
-    tb_logger = pl_loggers.TensorBoardLogger('logs/', name=NAME)
+    spec = importlib.util.spec_from_file_location('configs.config', args.cfg)
+    foo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(foo)
 
-    print('Creating dataloaders...')
-    train_set = DataLoader(ds_train, batch_size=BS)
-    validate_set = DataLoader(ds_validate, batch_size=BS)
+    Config = foo.Config
 
-    print('Fitting...')
-    trainer = pl.Trainer(max_epochs=300, gpus=[0, 1], logger=tb_logger, log_save_interval=10, track_grad_norm=2)
-    trainer.fit(iminegg, train_set, validate_set)
+    override_vars(Config)
+
+    cfg = Config()
+    cfg.train()
+
+
