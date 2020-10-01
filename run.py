@@ -32,6 +32,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('mode', choices=['train'])
     parser.add_argument('cfg')
+    parser.add_argument('--ckpt', default=None)
 
     args = parser.parse_args()
 
@@ -43,7 +44,7 @@ if __name__ == '__main__':
 
     override_vars(Config)
 
-    cfg = Config()
+    cfg = Config(args.ckpt)
     cfg.train()
 
 

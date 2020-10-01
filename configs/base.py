@@ -14,7 +14,7 @@ class Config:
     NPREF = ''
     NSUF = ''
     TRAIN_EPOCH_SIZE = 1000
-    VAL_EPOCH_SIZE = 200
+    VAL_EPOCH_SIZE = 100
     DEV_RUN = False
 
     GPUS = "0"
@@ -32,7 +32,9 @@ class Config:
         exp_name += f'w{self.W}-bs{self.BS}'
         return exp_name
 
-    def __init__(self):
+    def __init__(self, load_ckpt = None):
+        self.load_ckpt = load_ckpt
+    
         print('Building net...')
         iminegg_net = ImineggNet1(w=Config.W)
         self.model = Iminegg(iminegg_net)
@@ -52,12 +54,12 @@ class Config:
 
         checkpoint_saver = pl.callbacks.ModelCheckpoint(
             save_top_k=3,
+#            monitor='val/loss',
             verbose=True,
-            monitor='val/loss',
             mode='min'
         )
 
-        trainer = pl.Trainer(max_epochs=10000, gpus=self.GPUS, logger=self.tb_logger, log_save_interval=10, track_grad_norm=2,
-                             checkpoint_callback=checkpoint_saver,
+        trainer = pl.Trainer(max_epochs=3000, gpus=self.GPUS, logger=self.tb_logger, log_save_interval=10, track_grad_norm=2,
+                             checkpoint_callback=checkpoint_saver, resume_from_checkpoint=self.load_ckpt,
                              fast_dev_run=self.DEV_RUN)
         trainer.fit(self.model, self.dl_train, self.dl_validation)

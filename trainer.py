@@ -65,7 +65,7 @@ class Iminegg(pl.LightningModule):
             "val/noise_psnr": -10 * (EPS + loss_noise).log10(),
         }
 
-        res = pl.EvalResult(loss)
+        res = pl.EvalResult(checkpoint_on=loss)
         res.log_dict(logs, on_step=False, on_epoch=True)
 
         return res
