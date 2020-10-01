@@ -4,36 +4,37 @@ import torch.nn.functional as F
 from pixel_shuffle import PixelShuffle1D
 
 dbg_shape_print = False
+
+
 class ImineggNet1(nn.Module):
-    def __init__(self, upscale_factor):
+    def __init__(self, w=128):
         super().__init__()
 
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(0.5)
         self.leaky_relu = nn.LeakyReLU(0.2)
-        self.conv1 = nn.Conv1d(1, 128, 65, 2, 32)
-        self.conv2 = nn.Conv1d(128, 384, 33, 2, 16)
-        self.conv3 = nn.Conv1d(384, 512, 17, 2, 8)
-        self.conv4 = nn.Conv1d(512, 512, 9, 2, 4)
-        self.conv5 = nn.Conv1d(512, 512, 9, 2, 4)
-        self.conv6 = nn.Conv1d(512, 512, 9, 2, 4)
-        self.conv7 = nn.Conv1d(512, 512, 9, 2, 4)
-        self.conv8 = nn.Conv1d(512, 512, 9, 2, 4)
+        self.conv1 = nn.Conv1d(1, w, 65, 2, 32)
+        self.conv2 = nn.Conv1d(w, w*3, 33, 2, 16)
+        self.conv3 = nn.Conv1d(w*3, w*4, 17, 2, 8)
+        self.conv4 = nn.Conv1d(w*4, w*4, 9, 2, 4)
+        self.conv5 = nn.Conv1d(w*4, w*4, 9, 2, 4)
+        self.conv6 = nn.Conv1d(w*4, w*4, 9, 2, 4)
+        self.conv7 = nn.Conv1d(w*4, w*4, 9, 2, 4)
+        self.conv8 = nn.Conv1d(w*4, w*4, 9, 2, 4)
         
-        self.conv_btlneck = nn.Conv1d(512, 512, 9, 2, 4)
+        self.conv_btlneck = nn.Conv1d(w*4, w*4, 9, 2, 4)
         
-        self.conv8_up = nn.Conv1d(512, 512 * 2, 9, 1, 4)
-        self.conv7_up = nn.Conv1d(512 * 2, 512 * 2, 9, 1, 4)
-        self.conv6_up = nn.Conv1d(512 * 2, 512 * 2, 9, 1, 4)
-        self.conv5_up = nn.Conv1d(512 * 2, 512 * 2, 9, 1, 4)
-        self.conv4_up = nn.Conv1d(512 * 2, 512 * 2, 9, 1, 4)
-        self.conv3_up = nn.Conv1d(512 * 2, 512 * 2, 17, 1, 8)
-        self.conv2_up = nn.Conv1d(512 * 2, 384 * 2, 33, 1, 16)
-        self.conv1_up = nn.Conv1d(384 * 2, 128 * 2, 65, 1, 32)
-        self.conv_final = nn.Conv1d(128 * 2, 1 * 2, 9, 1, 4)
+        self.conv8_up = nn.Conv1d(w*4, w*4 * 2, 9, 1, 4)
+        self.conv7_up = nn.Conv1d(w*4 * 2, w*4 * 2, 9, 1, 4)
+        self.conv6_up = nn.Conv1d(w*4 * 2, w*4 * 2, 9, 1, 4)
+        self.conv5_up = nn.Conv1d(w*4 * 2, w*4 * 2, 9, 1, 4)
+        self.conv4_up = nn.Conv1d(w*4 * 2, w*4 * 2, 9, 1, 4)
+        self.conv3_up = nn.Conv1d(w*4 * 2, w*4 * 2, 17, 1, 8)
+        self.conv2_up = nn.Conv1d(w*4 * 2, w*3 * 2, 33, 1, 16)
+        self.conv1_up = nn.Conv1d(w*3 * 2, w * 2, 65, 1, 32)
+        self.conv_final = nn.Conv1d(w * 2, 1 * 2, 9, 1, 4)
         
         #self.conv4 = nn.Conv1d(512, upscale_factor ** 2, (3, 3), (1, 1), (1, 1))
-        
         self.pixel_shuffle = PixelShuffle1D(64)
         self.pixel_shuffle2 = PixelShuffle1D(2)
 
