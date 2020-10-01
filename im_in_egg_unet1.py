@@ -30,7 +30,7 @@ class ImineggNet1(nn.Module):
         self.conv5_up = nn.Conv1d(w*4 * 2, w*4 * 2, 9, 1, 4)
         self.conv4_up = nn.Conv1d(w*4 * 2, w*4 * 2, 9, 1, 4)
         self.conv3_up = nn.Conv1d(w*4 * 2, w*4 * 2, 17, 1, 8)
-        self.conv2_up = nn.Conv1d(512 * 2, w*3 * 2, 33, 1, 16)
+        self.conv2_up = nn.Conv1d(w*4 * 2, w*3 * 2, 33, 1, 16)
         self.conv1_up = nn.Conv1d(w*3 * 2, w * 2, 65, 1, 32)
         self.conv_final = nn.Conv1d(w * 2, 1 * 2, 9, 1, 4)
         
