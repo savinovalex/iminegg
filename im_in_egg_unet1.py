@@ -3,7 +3,7 @@ from torch import nn
 import torch.nn.functional as F
 from pixel_shuffle import PixelShuffle1D
 
-dbg_shape_print = False
+dbg_shape_print = True
 
 
 class ImineggNet1(nn.Module):
@@ -11,7 +11,7 @@ class ImineggNet1(nn.Module):
         super().__init__()
 
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.2)
         self.leaky_relu = nn.LeakyReLU(0.2)
         self.conv1 = nn.Conv1d(1, w, 65, 2, 32)
         self.conv2 = nn.Conv1d(w, w*3, 33, 2, 16)

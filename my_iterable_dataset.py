@@ -50,9 +50,9 @@ class MyIterableDataset(torch.utils.data.IterableDataset):
     
     def generate(self):
         r = random.uniform(0, 1)
-        if r < 0.4:
-            return self.generate_with_noise()
         if r < 0.8:
+            return self.generate_with_noise()
+        if r < 0.9:
             return self.generate_noise()
         return self.generate_voice()
         
