@@ -2,18 +2,18 @@ import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
 from torch.utils.data import DataLoader
 
-from im_in_egg_unet1 import ImineggNet1
+from im_in_egg_unet1_param import ImineggNet1
 from my_iterable_dataset import MyIterableDataset
 from trainer import Iminegg
 
 
 class Config:
-    W = 128
-    BS = 20
+    W = 32
+    BS = 40
     NAME = 'default'
     NPREF = ''
     NSUF = ''
-    TRAIN_EPOCH_SIZE = 1000
+    TRAIN_EPOCH_SIZE = 3000
     VAL_EPOCH_SIZE = 100
     DEV_RUN = False
 
@@ -53,7 +53,7 @@ class Config:
         print(f'Fitting {self.exp_name} ...')
 
         checkpoint_saver = pl.callbacks.ModelCheckpoint(
-            save_top_k=3,
+            save_top_k=2,
 #            monitor='val/loss',
             verbose=True,
             mode='min'
