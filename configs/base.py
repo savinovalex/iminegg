@@ -10,8 +10,9 @@ from trainer import Iminegg
 class Config:
     W = 32
     DRP = 0.0
-    BS = 50
-    APPLY_BNM = True
+    BS = 40
+    APPLY_BNM = False
+    BLUR = False
     NAME = 'default'
     NPREF = ''
     NSUF = ''
@@ -31,7 +32,7 @@ class Config:
         if self.NSUF:
             exp_name += f'-{self.NSUF}-'
 
-        exp_name += f'w{self.W}-bs{self.BS}-drp{self.DRP}'
+        exp_name += f'w{self.W}-bs{self.BS}-drp{self.DRP}_relu0.2_add2l'
         if self.APPLY_BNM:
            exp_name += '-bnm'
         return exp_name
@@ -40,16 +41,17 @@ class Config:
         self.load_ckpt = load_ckpt
     
         print('Building net...')
-        iminegg_net = ImineggNet1(w=Config.W, apply_bnm=Config.APPLY_BNM, dropout_p=self.DRP)
+        iminegg_net = ImineggNet1(w=Config.W, blur=self.BLUR, apply_bnm=Config.APPLY_BNM, dropout_p=self.DRP)
+
         self.model = Iminegg(iminegg_net)
 
         print('Loading datasets...')
-        ds_train = MyIterableDataset(Config.TRAIN_EPOCH_SIZE, "./data/train")
-        ds_validate = MyIterableDataset(Config.VAL_EPOCH_SIZE, "./data/val")
+        ds_train = MyIterableDataset(self.TRAIN_EPOCH_SIZE, "./data/train")
+        ds_validate = MyIterableDataset(self.VAL_EPOCH_SIZE, "./data/val")
 
         print('Creating dataloaders...')
-        self.dl_train = DataLoader(ds_train, batch_size=Config.BS)
-        self.dl_validation = DataLoader(ds_validate, batch_size=Config.BS)
+        self.dl_train = DataLoader(ds_train, batch_size=self.BS)
+        self.dl_validation = DataLoader(ds_validate, batch_size=self.BS)
 
         self.tb_logger = pl_loggers.TensorBoardLogger('logs/', name=self.exp_name)
 

@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from pixel_shuffle import PixelShuffle1D
+from modules import PixelShuffle1D, BlurConv
 
 dbg_shape_print = False
 
@@ -14,13 +14,15 @@ class ImineggNet1(nn.Module):
     def _n_paddings(self, w):
         return [x // 2 for x in self._filter_sizes()]
     
-    def __init__(self, w=128, apply_bnm=False, dropout_p=0.2):
+    def __init__(self, w=128, blur=False, apply_bnm=False, dropout_p=0.2, leaky_relu_p = 0.2):
         super().__init__()
 
         self.apply_bnm = apply_bnm
+        sconv = BlurConv if blur else nn.Conv1d
+
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(dropout_p)
-        self.leaky_relu = nn.LeakyReLU(0.2)
+        self.leaky_relu = nn.LeakyReLU(leaky_relu_p)
         
         self.bnm_list = nn.ModuleList()
         self.conv_down_list = nn.ModuleList()
@@ -30,10 +32,10 @@ class ImineggNet1(nn.Module):
         paddings = self._n_paddings(w)
         
         for i in range(len(filter_sizes)):
-            self.conv_down_list.append( nn.Conv1d(n_features[i], n_features[i + 1], filter_sizes[i], 2, paddings[i]) )
+            self.conv_down_list.append( sconv(n_features[i], n_features[i + 1], filter_sizes[i], 2, paddings[i]) )
             self.bnm_list.append(nn.BatchNorm1d(num_features=n_features[i + 1]))
         
-        self.conv_btlneck = nn.Conv1d(w * 4, w * 4, 9, 2, 4)
+        self.conv_btlneck = sconv(w * 4, w * 4, 9, 2, 4)
         self.bnm_list.append(nn.BatchNorm1d(num_features=w * 4))
         
         self.conv_up_list = nn.ModuleList()
