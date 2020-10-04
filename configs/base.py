@@ -10,6 +10,8 @@ from trainer import Iminegg
 class Config:
     W = 32
     BS = 40
+    BLUR = False
+
     NAME = 'default'
     NPREF = ''
     NSUF = ''
@@ -36,16 +38,16 @@ class Config:
         self.load_ckpt = load_ckpt
     
         print('Building net...')
-        iminegg_net = ImineggNet1(w=Config.W)
+        iminegg_net = ImineggNet1(w=self.W, blur=self.BLUR)
         self.model = Iminegg(iminegg_net)
 
         print('Loading datasets...')
-        ds_train = MyIterableDataset(Config.TRAIN_EPOCH_SIZE, "./data/train")
-        ds_validate = MyIterableDataset(Config.VAL_EPOCH_SIZE, "./data/val")
+        ds_train = MyIterableDataset(self.TRAIN_EPOCH_SIZE, "./data/train")
+        ds_validate = MyIterableDataset(self.VAL_EPOCH_SIZE, "./data/val")
 
         print('Creating dataloaders...')
-        self.dl_train = DataLoader(ds_train, batch_size=Config.BS)
-        self.dl_validation = DataLoader(ds_validate, batch_size=Config.BS)
+        self.dl_train = DataLoader(ds_train, batch_size=self.BS)
+        self.dl_validation = DataLoader(ds_validate, batch_size=self.BS)
 
         self.tb_logger = pl_loggers.TensorBoardLogger('logs/', name=self.exp_name)
 

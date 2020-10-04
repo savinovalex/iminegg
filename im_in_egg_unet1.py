@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from pixel_shuffle import PixelShuffle1D
+from modules import PixelShuffle1D
 
 dbg_shape_print = False
 
