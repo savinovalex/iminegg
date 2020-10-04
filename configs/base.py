@@ -9,7 +9,9 @@ from trainer import Iminegg
 
 class Config:
     W = 32
-    BS = 40
+    DRP = 0.0
+    BS = 50
+    APPLY_BNM = True
     NAME = 'default'
     NPREF = ''
     NSUF = ''
@@ -29,14 +31,16 @@ class Config:
         if self.NSUF:
             exp_name += f'-{self.NSUF}-'
 
-        exp_name += f'w{self.W}-bs{self.BS}'
+        exp_name += f'w{self.W}-bs{self.BS}-drp{self.DRP}'
+        if self.APPLY_BNM:
+           exp_name += '-bnm'
         return exp_name
 
     def __init__(self, load_ckpt = None):
         self.load_ckpt = load_ckpt
     
         print('Building net...')
-        iminegg_net = ImineggNet1(w=Config.W)
+        iminegg_net = ImineggNet1(w=Config.W, apply_bnm=Config.APPLY_BNM, dropout_p=self.DRP)
         self.model = Iminegg(iminegg_net)
 
         print('Loading datasets...')
