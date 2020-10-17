@@ -2,25 +2,19 @@ import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
 from torch.utils.data import DataLoader
 
-#from im_in_egg_unet1_param_add3l import ImineggNet1 as ImineggNet
-#from im_in_egg_unet1_param_add3l_2 import ImineggNet1_1 as ImineggNet
-from im_in_egg_unet1_param_norm import ImineggNet1 as ImineggNet
+from im_in_egg_unet1 import ImineggNet1
 from my_iterable_dataset import MyIterableDataset
 from trainer import Iminegg
 
 
 class Config:
-    W = 56
-    DRP = 0.0
-    BS = 50
-    RELU = 0.2
-    APPLY_BNM = False
-    BLUR = False
+    W = 12
+    BS = 20
     NAME = 'default'
     NPREF = ''
     NSUF = ''
-    TRAIN_EPOCH_SIZE = 3000
-    VAL_EPOCH_SIZE = 400
+    TRAIN_EPOCH_SIZE = 1000
+    VAL_EPOCH_SIZE = 100
     DEV_RUN = False
 
     GPUS = "0"
@@ -35,26 +29,23 @@ class Config:
         if self.NSUF:
             exp_name += f'-{self.NSUF}-'
 
-        exp_name += f'w{self.W}-bs{self.BS}-drp{self.DRP}_relu{self.RELU}_NS'
-        if self.APPLY_BNM:
-           exp_name += '-bnm'
+        exp_name += f'w{self.W}-bs{self.BS}'
         return exp_name
 
     def __init__(self, load_ckpt = None):
         self.load_ckpt = load_ckpt
     
         print('Building net...')
-        iminegg_net = ImineggNet(w=Config.W, blur=self.BLUR, apply_bnm=Config.APPLY_BNM, dropout_p=self.DRP, leaky_relu_p=self.RELU)
-
+        iminegg_net = ImineggNet1(w=Config.W)
         self.model = Iminegg(iminegg_net)
 
         print('Loading datasets...')
-        ds_train = MyIterableDataset(self.TRAIN_EPOCH_SIZE, "./data/train22", train_sample_length=22528*2)
-        ds_validate = MyIterableDataset(self.VAL_EPOCH_SIZE, "./data/val22", train_sample_length=22528*2)
+        ds_train = MyIterableDataset(Config.TRAIN_EPOCH_SIZE, "./data/train")
+        ds_validate = MyIterableDataset(Config.VAL_EPOCH_SIZE, "./data/val")
 
         print('Creating dataloaders...')
-        self.dl_train = DataLoader(ds_train, batch_size=self.BS)
-        self.dl_validation = DataLoader(ds_validate, batch_size=self.BS)
+        self.dl_train = DataLoader(ds_train, batch_size=Config.BS)
+        self.dl_validation = DataLoader(ds_validate, batch_size=Config.BS)
 
         self.tb_logger = pl_loggers.TensorBoardLogger('logs/', name=self.exp_name)
 
@@ -62,7 +53,7 @@ class Config:
         print(f'Fitting {self.exp_name} ...')
 
         checkpoint_saver = pl.callbacks.ModelCheckpoint(
-            save_top_k=2,
+            save_top_k=3,
 #            monitor='val/loss',
             verbose=True,
             mode='min'

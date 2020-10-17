@@ -54,7 +54,8 @@ class Iminegg(pl.LightningModule):
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
-        return optimizer
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.994)
+        return [optimizer], [scheduler]
     
     def validation_step(self, batch, batch_idx):
         loss, loss_voice_noise, loss_noise = self.step(batch)

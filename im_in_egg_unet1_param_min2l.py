@@ -8,9 +8,9 @@ dbg_shape_print = False
 
 class ImineggNet1(nn.Module):
     def _n_features(self, w):
-        return [1, w, w*3, w*4, w*4, w*4, w*4, w*4, w*4, w*4, w*4, w*4]
+        return [1, w, w*3, w*4, w*4, w*4, w*4, w*4]
     def _filter_sizes(self):
-        return [65, 33, 17, 9, 9, 9, 9, 9, 9, 9]
+        return [65, 33, 17, 9, 9, 9]
     def _n_paddings(self, w):
         return [x // 2 for x in self._filter_sizes()]
     
